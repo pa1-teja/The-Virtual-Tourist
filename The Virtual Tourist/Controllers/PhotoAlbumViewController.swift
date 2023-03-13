@@ -1,19 +1,17 @@
 //
-//  ViewController.swift
+//  PhotoAlbumViewController.swift
 //  The Virtual Tourist
 //
 //  Created by TEJAKO3-Old Mac on 11/03/23.
 //
 
+import Foundation
 import UIKit
 
-class ViewController: UIViewController {
+
+class PhotoAlbumViewController: UIViewController{
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
     }
-
-
 }
-
