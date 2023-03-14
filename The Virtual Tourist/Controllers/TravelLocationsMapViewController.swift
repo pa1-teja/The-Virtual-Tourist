@@ -10,7 +10,7 @@ import MapKit
 import CoreLocation
 
 
-class TravelLocationsMapViewController: UIViewController, CLLocationManagerDelegate {
+class TravelLocationsMapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
     
     
     
@@ -20,9 +20,12 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     private var longTapGesture = UILongPressGestureRecognizer()
     
+    private let locationObj = UIApplication.shared.delegate as! AppDelegate
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        mapView.delegate = self
         
                 requestLocationPermission()
                 requestLiveCurrentLocationDetailsWithAccuracy()
@@ -43,6 +46,21 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
            }
     }
     
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        if view.annotation?.coordinate != nil{
+            locationObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
+            moveToPhotoAlbum(locationCoordinates: locationObj.location)
+        }
+    }
+    
+    
+    private func moveToPhotoAlbum(locationCoordinates: [TravelLocationModel.travelLocation]){
+        let photoAlbumViewConteoller = storyboard?.instantiateViewController(withIdentifier: "Photo Album") as! PhotoAlbumViewController
+        
+        photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
+        
+        navigationController?.pushViewController(photoAlbumViewConteoller, animated: true)
+    }
     
     private func requestLocationPermission(){
         locationManager.requestWhenInUseAuthorization()

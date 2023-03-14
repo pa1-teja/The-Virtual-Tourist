@@ -35,7 +35,7 @@
                     <navigationItem key="navigationItem" id="Bji-ZS-mpK"/>
                     <connections>
                         <outlet property="mapView" destination="ber-5R-KlM" id="AN9-g5-dWr"/>
-                        <segue destination="pDe-eE-kuO" kind="show" id="uBz-YN-QAf"/>
+                        <segue destination="pDe-eE-kuO" kind="show" identifier="PhotoAlbumSegue" id="uBz-YN-QAf"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -61,7 +61,7 @@
         <!--Photo Album View Controller-->
         <scene sceneID="EHM-SO-YDQ">
             <objects>
-                <viewController id="pDe-eE-kuO" customClass="PhotoAlbumViewController" customModule="The_Virtual_Tourist" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="Photo Album" id="pDe-eE-kuO" customClass="PhotoAlbumViewController" customModule="The_Virtual_Tourist" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="723-iE-5g6">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -126,6 +126,9 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" leftItemsSupplementBackButton="YES" id="srF-Wd-1uK"/>
+                    <connections>
+                        <outlet property="mapView" destination="WGu-Jt-SyG" id="bGt-NT-aUw"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="RTM-qn-mYu" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>

@@ -15,9 +15,6 @@ class Utils{
     
    class func pinLocationOnMap(locationManager: CLLocationManager!, mapView:MKMapView!){
         
-        let lat = locationManager.location?.coordinate.latitude
-        let lng = locationManager.location?.coordinate.longitude
-        
         switch locationManager.authorizationStatus{
             
         case .authorizedAlways: markLocation(locationCoordinates: locationManager.location!.coordinate, mapView: mapView)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D7017F0C29C03A7B00CD0B38 /* TravelLocationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7017F0B29C03A7B00CD0B38 /* TravelLocationModel.swift */; };
 		D753F30129BC676A0070D8AD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D753F30029BC676A0070D8AD /* AppDelegate.swift */; };
 		D753F30329BC676A0070D8AD /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D753F30229BC676A0070D8AD /* SceneDelegate.swift */; };
 		D753F30529BC676A0070D8AD /* TravelLocationsMapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D753F30429BC676A0070D8AD /* TravelLocationsMapViewController.swift */; };
@@ -18,6 +19,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D7017F0B29C03A7B00CD0B38 /* TravelLocationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelLocationModel.swift; sourceTree = "<group>"; };
 		D753F2FD29BC676A0070D8AD /* The Virtual Tourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "The Virtual Tourist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D753F30029BC676A0070D8AD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D753F30229BC676A0070D8AD /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				D7A2285D29BDB63C00E2AC10 /* Utilities */,
 				D753F31B29BC6D4B0070D8AD /* Database Stuff */,
 				D753F31A29BC6D3D0070D8AD /* Network Stuff */,
+				D7017F0B29C03A7B00CD0B38 /* TravelLocationModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -202,6 +205,7 @@
 			files = (
 				D7A2285F29BDB65C00E2AC10 /* Utils.swift in Sources */,
 				D753F30529BC676A0070D8AD /* TravelLocationsMapViewController.swift in Sources */,
+				D7017F0C29C03A7B00CD0B38 /* TravelLocationModel.swift in Sources */,
 				D753F30129BC676A0070D8AD /* AppDelegate.swift in Sources */,
 				D753F30329BC676A0070D8AD /* SceneDelegate.swift in Sources */,
 				D753F31829BC68DA0070D8AD /* PhotoAlbumViewController.swift in Sources */,
