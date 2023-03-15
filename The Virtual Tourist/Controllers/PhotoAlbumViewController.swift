@@ -17,11 +17,17 @@ class PhotoAlbumViewController: UIViewController{
     
     @IBOutlet weak var mapView: MKMapView!
     
+    @IBOutlet weak var noPhotosAlertLabel: UILabel!
+    
+    @IBOutlet weak var photosCollectionView: UICollectionView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        noPhotosAlertLabel.isHidden = true
         for i in (0 ..< travelLocationCoordinates.count){
             Utils.markLocation(locationCoordinates: travelLocationCoordinates[i].locationCoordinates, mapView: mapView)
         }
     }
+    
+    
 }
