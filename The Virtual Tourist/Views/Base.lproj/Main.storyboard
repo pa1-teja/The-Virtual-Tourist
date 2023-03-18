@@ -73,8 +73,8 @@
                                 </constraints>
                                 <standardMapConfiguration key="preferredConfiguration"/>
                             </mapView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="No Photos available for the chosen location" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0KY-I7-EgH" userLabel="No Photos Available Alert Label">
-                                <rect key="frame" x="16" y="338" width="361" height="419"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No Photos available for the chosen location" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0KY-I7-EgH" userLabel="No Photos Available Alert Label">
+                                <rect key="frame" x="32.333333333333343" y="736.66666666666663" width="328.33333333333326" height="20.333333333333371"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -85,7 +85,7 @@
                                     <constraint firstAttribute="height" constant="53" id="Cbf-yA-f2n"/>
                                 </constraints>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="gray" title="Button"/>
+                                <buttonConfiguration key="configuration" style="gray" title="New Collection"/>
                             </button>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="vP5-w2-f2w" userLabel="Travel Photos Collection View">
                                 <rect key="frame" x="16" y="338" width="361" height="429"/>
@@ -97,16 +97,24 @@
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
+                                <activityIndicatorView key="backgroundView" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="medium" id="32L-OM-SN7" userLabel="loading indicatior">
+                                    <rect key="frame" x="0.0" y="0.0" width="361" height="429"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                </activityIndicatorView>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="iXG-N6-jEf" userLabel="Photo View Cell">
-                                        <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="Flickr Photo" id="iXG-N6-jEf" userLabel="Photo View Cell" customClass="TravelPhotosCollectionViewCell" customModule="The_Virtual_Tourist" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <collectionViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="pap-xe-Cz9">
-                                            <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ODI-H1-CiZ">
-                                                    <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
+                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ODI-H1-CiZ">
+                                                    <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="100" id="Q24-Rf-1RN"/>
+                                                        <constraint firstAttribute="height" constant="100" id="Xt3-f8-41Z"/>
+                                                    </constraints>
                                                 </imageView>
                                             </subviews>
                                             <constraints>
@@ -116,6 +124,9 @@
                                                 <constraint firstItem="ODI-H1-CiZ" firstAttribute="top" secondItem="pap-xe-Cz9" secondAttribute="top" id="wep-df-qeA"/>
                                             </constraints>
                                         </collectionViewCellContentView>
+                                        <connections>
+                                            <outlet property="photoViewCell" destination="ODI-H1-CiZ" id="jhJ-IF-k8Z"/>
+                                        </connections>
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
@@ -135,6 +146,7 @@
                     </view>
                     <navigationItem key="navigationItem" leftItemsSupplementBackButton="YES" id="srF-Wd-1uK"/>
                     <connections>
+                        <outlet property="LoadingIndicator" destination="32L-OM-SN7" id="TaH-DF-stC"/>
                         <outlet property="mapView" destination="WGu-Jt-SyG" id="bGt-NT-aUw"/>
                         <outlet property="noPhotosAlertLabel" destination="0KY-I7-EgH" id="MlL-ua-9EC"/>
                         <outlet property="photosCollectionView" destination="vP5-w2-f2w" id="oQj-A0-k2y"/>
