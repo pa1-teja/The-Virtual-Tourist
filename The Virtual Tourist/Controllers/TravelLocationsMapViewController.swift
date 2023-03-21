@@ -8,9 +8,10 @@
 import UIKit
 import MapKit
 import CoreLocation
+import CoreData
 
 
-class TravelLocationsMapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
+class TravelLocationsMapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
     
     
     
@@ -20,11 +21,34 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     private var longTapGesture = UILongPressGestureRecognizer()
     
-    private let locationObj = UIApplication.shared.delegate as! AppDelegate
+    private let appDelegateObj = UIApplication.shared.delegate as! AppDelegate
+    
+    var dataController: DataController!
+    
+    var fetchedResultsController: NSFetchedResultsController<LocationPinTable>!
+    
+    fileprivate func setupFetchedResultController(){
+        let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
+        
+        let sortDescriptor = NSSortDescriptor(key: "id", ascending: false)
+        
+        fetchRequest.sortDescriptors = [sortDescriptor]
+        
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "LocationPins")
+        
+        fetchedResultsController.delegate = self
+        
+        do{
+            try fetchedResultsController.performFetch()
+        }catch{
+            fatalError("Fetch action could not be performed : \(error.localizedDescription)")
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        dataController = appDelegateObj.dataController
         mapView.delegate = self
         
                 requestLocationPermission()
@@ -35,6 +59,19 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         
         mapView.addGestureRecognizer(longTapGesture)
         
+        setupFetchedResultController()
+    }
+    
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        setupFetchedResultController()
+    }
+    
+    func fetchLocallyStoredLocationPins(){
+        let dbLocationsCount = fetchedResultsController.fetchedObjects?.count
+        
+        print("Database Locations count : \(dbLocationsCount)")
     }
     
     @objc func handleLongPressPinLocation(){
@@ -43,13 +80,21 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
                let point = longTapGesture.location(in: mapView)
                let coordinate = mapView.convert(point, toCoordinateFrom: mapView)
             Utils.markLocation(locationCoordinates: coordinate, mapView: mapView)
+            insertLocationPinDetails(coordinates: coordinate)
            }
+    }
+    
+    func insertLocationPinDetails(coordinates: CLLocationCoordinate2D){
+        let locationPinTable = LocationPinTable(context: dataController.viewContext)
+        locationPinTable.latitude = coordinates.latitude
+        locationPinTable.longitude = coordinates.longitude
+        try? dataController.viewContext.save()
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if view.annotation?.coordinate != nil{
-            locationObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
-            moveToPhotoAlbum(locationCoordinates: locationObj.location)
+            appDelegateObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
+            moveToPhotoAlbum(locationCoordinates: appDelegateObj.location)
         }
     }
     
@@ -87,29 +132,9 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         }
     }
     
-
-    
-    func onMapLoad(){
-        
-        
-       
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        fetchedResultsController = nil
     }
-    
-    func onLocationLogPressDetected(){
-//        let annotation = MKPointAnnotation()
-//        let location = CLLocationCoordinate2D(latitude: profile.latitude, longitude: profile.longitude)
-//        annotation.coordinate = location
-//        annotation.title = profile.firstName
-//        annotation.subtitle = profile.mediaURL
-//
-//        let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-//
-//        let region = MKCoordinateRegion(center: location, span: span)
-//
-//        mapView.setRegion(region, animated: false)
-//        mapView.addAnnotation(annotation)
-    }
-    
-
 }
 
