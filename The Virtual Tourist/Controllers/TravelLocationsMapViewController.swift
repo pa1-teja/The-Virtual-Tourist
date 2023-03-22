@@ -60,6 +60,8 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         mapView.addGestureRecognizer(longTapGesture)
         
         setupFetchedResultController()
+        
+        fetchLocallyStoredLocationPins()
     }
     
     
@@ -69,9 +71,15 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     }
     
     func fetchLocallyStoredLocationPins(){
-        let dbLocationsCount = fetchedResultsController.fetchedObjects?.count
-        
-        print("Database Locations count : \(dbLocationsCount)")
+        let dbLocationsObjects = fetchedResultsController.fetchedObjects
+
+        if let pins = dbLocationsObjects {
+            for pin in pins {
+                print("location pin coordinates : \(pin.longitude) / \(pin.latitude)")
+                let coord = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+                Utils.markLocation(locationCoordinates: coord, mapView: mapView)
+            }
+        }
     }
     
     @objc func handleLongPressPinLocation(){
@@ -80,7 +88,7 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
                let point = longTapGesture.location(in: mapView)
                let coordinate = mapView.convert(point, toCoordinateFrom: mapView)
             Utils.markLocation(locationCoordinates: coordinate, mapView: mapView)
-            insertLocationPinDetails(coordinates: coordinate)
+           insertLocationPinDetails(coordinates: coordinate)
            }
     }
     
@@ -88,13 +96,15 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         let locationPinTable = LocationPinTable(context: dataController.viewContext)
         locationPinTable.latitude = coordinates.latitude
         locationPinTable.longitude = coordinates.longitude
-        try? dataController.viewContext.save()
+             appDelegateObj.saveViewContext()
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if view.annotation?.coordinate != nil{
             appDelegateObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
+            
             moveToPhotoAlbum(locationCoordinates: appDelegateObj.location)
+        
         }
     }
     

@@ -36,7 +36,7 @@ class DataController{
         
         persistentContainer.loadPersistentStores { (storesDescription, error) in
             guard error == nil else{
-                fatalError(error!.localizedDescription)
+                fatalError("Database load error : \(error!.localizedDescription)")
             }
             self.autoSaveViewContext()
             self.configureContexts()
