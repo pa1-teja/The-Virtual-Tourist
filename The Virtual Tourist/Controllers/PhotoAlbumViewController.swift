@@ -9,11 +9,18 @@ import Foundation
 import UIKit
 import CoreLocation
 import MapKit
+import CoreData
 
-class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource{
+class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate{
 
     
-    var travelLocationCoordinates: [TravelLocationModel.travelLocation]!
+    var travelLocationCoordinates: CLLocationCoordinate2D!
+    
+    var dataController: DataController!
+    
+    var fetchedResultsController: NSFetchedResultsController<PhotosTable>!
+    
+    var location:LocationPinTable?
     
     @IBOutlet weak var mapView: MKMapView!
     
@@ -25,25 +32,80 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     var photosList:[FlickrAPIResponseModel.Photo]?
     
+    fileprivate func setupFetchedResultController(){
+        let fetchRequest: NSFetchRequest<PhotosTable> = PhotosTable.fetchRequest()
+        
+        let location = LocationPinTable(context: dataController.viewContext)
+        location.latitude = travelLocationCoordinates.latitude
+        location.longitude = travelLocationCoordinates.longitude
+        
+        let predicate = NSPredicate(format: "latitude == %@", String(travelLocationCoordinates.latitude))
+        
+        let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
+        
+        fetchRequest.sortDescriptors = [sortDescriptor]
+        fetchRequest.predicate = predicate
+        
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "PhotosCache")
+        
+        fetchedResultsController.delegate = self
+        
+        do{
+            try fetchedResultsController.performFetch()
+        }catch{
+            fatalError("Fetch action could not be performed : \(error.localizedDescription)")
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        LoadingIndicator.isHidden = true
+        LoadingIndicator.isHidden = false
        
         
         noPhotosAlertLabel.isHidden = true
-        for i in (0 ..< travelLocationCoordinates.count){
-            Utils.markLocation(locationCoordinates: travelLocationCoordinates[i].locationCoordinates, mapView: mapView)
-        }
         
-        var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates[0].locationCoordinates.latitude), String(travelLocationCoordinates[0].locationCoordinates.longitude)).url
+            Utils.markLocation(locationCoordinates: travelLocationCoordinates, mapView: mapView)
         
+        location = LocationPinTable(context: dataController.viewContext)
+        location?.longitude = travelLocationCoordinates.longitude
+        location?.latitude = travelLocationCoordinates.latitude
+        
+        setupFetchedResultController()
+        
+       
         
         LoadingIndicator.isHidden = false
         
-        GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
+        if(fetchedResultsController.fetchedObjects!.isEmpty){
+            var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude)).url
+            GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
+        } else{
+            LoadingIndicator.isHidden = true
+            photosCollectionView.delegate = self
+            photosCollectionView.dataSource = self
+            photosCollectionView.reloadData()
+        }
+        
+        print("databse photos count: \(fetchedResultsController.fetchedObjects?.count)")
+        
+        for photo in fetchedResultsController.fetchedObjects! {
+            print("in photos table  latitude : \(photo.latitude)  / logitude : \(photo.longitude)")
+        }
     }
     
+    private func insertPhotosToDB(imageData: Data){
+        let photoTable = PhotosTable(context: dataController.viewContext)
+        photoTable.photo = imageData
+        photoTable.longitude = travelLocationCoordinates.longitude as Double
+        photoTable.latitude = travelLocationCoordinates.latitude as Double
+        do{
+            try dataController.viewContext.save()
+            print("photo insertion succesful")
+        }catch{
+            print("Photo insetion into DB failed due to : \(error.localizedDescription)")
+        }
+    }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
         
@@ -62,31 +124,38 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return photosList!.count
+        if(fetchedResultsController.fetchedObjects!.isEmpty){
+            return photosList!.count
+        }else{
+            return fetchedResultsController.fetchedObjects!.count
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
         
-        let url = FlickrAPI.getFlickrImageURL(serverId: photosList![(indexPath as NSIndexPath).row].server, imageId: photosList![(indexPath as NSIndexPath).row].id, imageSecret: photosList![(indexPath as NSIndexPath).row].secret)
-        
-        DispatchQueue.global().async {
-//            GenericAPIInfo.taskInteractWithAPI(isImageLoading: true, methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: UIImage.self, completionHandler: handleFetchedFlickrImage(fetchedImage:error:))
+        if(fetchedResultsController.fetchedObjects!.isEmpty){
             
-            if let data = try? Data(contentsOf: url){
-                DispatchQueue.main.async {
-                    cell.photoViewCell.image = UIImage(data: data)
+            let url = FlickrAPI.getFlickrImageURL(serverId: photosList![(indexPath as NSIndexPath).row].server, imageId: photosList![(indexPath as NSIndexPath).row].id, imageSecret: photosList![(indexPath as NSIndexPath).row].secret)
+            
+            DispatchQueue.global().async {
+                //            GenericAPIInfo.taskInteractWithAPI(isImageLoading: true, methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: UIImage.self, completionHandler: handleFetchedFlickrImage(fetchedImage:error:))
+                
+                if let data = try? Data(contentsOf: url){
+                    DispatchQueue.main.async {
+                        cell.photoViewCell.image = UIImage(data: data)
+                    }
+                    self.insertPhotosToDB(imageData: data)
                 }
+            }
+        }else{
+            DispatchQueue.main.async {
+                cell.photoViewCell.image = UIImage(data: self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo!)
             }
         }
         
         return cell
     }
-    
-    func handleFetchedFlickrImage(fetchedImage:UIImage?, error: Error?){
-        
-    }
-    
 
 }

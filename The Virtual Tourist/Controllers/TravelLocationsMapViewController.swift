@@ -103,16 +103,17 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         if view.annotation?.coordinate != nil{
             appDelegateObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
             
-            moveToPhotoAlbum(locationCoordinates: appDelegateObj.location)
+            moveToPhotoAlbum(locationCoordinates: view.annotation!.coordinate)
         
         }
     }
     
     
-    private func moveToPhotoAlbum(locationCoordinates: [TravelLocationModel.travelLocation]){
+    private func moveToPhotoAlbum(locationCoordinates: CLLocationCoordinate2D){
         let photoAlbumViewConteoller = storyboard?.instantiateViewController(withIdentifier: "Photo Album") as! PhotoAlbumViewController
         
         photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
+        photoAlbumViewConteoller.dataController = dataController
         
         navigationController?.pushViewController(photoAlbumViewConteoller, animated: true)
     }
