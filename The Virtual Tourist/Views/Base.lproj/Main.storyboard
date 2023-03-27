@@ -73,12 +73,6 @@
                                 </constraints>
                                 <standardMapConfiguration key="preferredConfiguration"/>
                             </mapView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No Photos available for the chosen location" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0KY-I7-EgH" userLabel="No Photos Available Alert Label">
-                                <rect key="frame" x="32.333333333333343" y="736.66666666666663" width="328.33333333333326" height="20.333333333333371"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="r1P-pR-C1F">
                                 <rect key="frame" x="0.0" y="765" width="393" height="53"/>
                                 <constraints>
@@ -86,10 +80,21 @@
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="gray" title="New Collection"/>
+                                <connections>
+                                    <action selector="discardAndGetFreshPhotos:" destination="pDe-eE-kuO" eventType="touchUpInside" id="zmB-i6-UeI"/>
+                                </connections>
                             </button>
-                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="vP5-w2-f2w" userLabel="Travel Photos Collection View">
-                                <rect key="frame" x="16" y="338" width="361" height="429"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No Photos available locally for the chosen location. Fetching from internet." textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsLetterSpacingToFitWidth="YES" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0KY-I7-EgH" userLabel="No Photos Available Alert Label">
+                                <rect key="frame" x="48" y="350" width="297" height="405"/>
+                                <accessibility key="accessibilityConfiguration">
+                                    <accessibilityTraits key="traits" selected="YES" staticText="YES" adjustable="YES"/>
+                                </accessibility>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="vP5-w2-f2w" userLabel="Travel Photos Collection View">
+                                <rect key="frame" x="16" y="340" width="361" height="428"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="kCL-v5-kgs">
                                     <size key="itemSize" width="128" height="128"/>
@@ -98,7 +103,7 @@
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <activityIndicatorView key="backgroundView" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="medium" id="32L-OM-SN7" userLabel="loading indicatior">
-                                    <rect key="frame" x="0.0" y="0.0" width="361" height="429"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="361" height="428"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 </activityIndicatorView>
                                 <cells>
@@ -134,13 +139,20 @@
                         <viewLayoutGuide key="safeArea" id="iX3-OE-NFo"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="r1P-pR-C1F" firstAttribute="centerX" secondItem="WGu-Jt-SyG" secondAttribute="centerX" id="0jP-ud-NVx"/>
+                            <constraint firstItem="r1P-pR-C1F" firstAttribute="top" secondItem="0KY-I7-EgH" secondAttribute="bottom" constant="10" id="1XR-C2-BKd"/>
+                            <constraint firstItem="iX3-OE-NFo" firstAttribute="trailing" secondItem="r1P-pR-C1F" secondAttribute="trailing" id="43F-ZX-lId"/>
                             <constraint firstItem="WGu-Jt-SyG" firstAttribute="leading" secondItem="723-iE-5g6" secondAttribute="leadingMargin" id="85g-4i-gzM"/>
-                            <constraint firstItem="r1P-pR-C1F" firstAttribute="top" secondItem="0KY-I7-EgH" secondAttribute="bottom" constant="8" id="At7-Md-Yhs"/>
-                            <constraint firstItem="r1P-pR-C1F" firstAttribute="centerX" secondItem="0KY-I7-EgH" secondAttribute="centerX" id="KxJ-UZ-nGc"/>
-                            <constraint firstItem="r1P-pR-C1F" firstAttribute="leading" secondItem="iX3-OE-NFo" secondAttribute="leading" id="M53-Ae-bCO"/>
+                            <constraint firstItem="iX3-OE-NFo" firstAttribute="bottom" secondItem="r1P-pR-C1F" secondAttribute="bottom" id="Clu-yG-od2"/>
+                            <constraint firstItem="vP5-w2-f2w" firstAttribute="leading" secondItem="iX3-OE-NFo" secondAttribute="leading" constant="16" id="IjI-Sc-e3I"/>
+                            <constraint firstAttribute="trailing" secondItem="vP5-w2-f2w" secondAttribute="trailing" constant="16" id="LLR-vr-Fdb"/>
+                            <constraint firstItem="r1P-pR-C1F" firstAttribute="top" secondItem="0KY-I7-EgH" secondAttribute="bottom" constant="10" id="N7g-Rr-ORR"/>
+                            <constraint firstItem="0KY-I7-EgH" firstAttribute="top" secondItem="WGu-Jt-SyG" secondAttribute="bottom" constant="20" id="RHU-Ok-yPY"/>
+                            <constraint firstItem="iX3-OE-NFo" firstAttribute="bottom" secondItem="vP5-w2-f2w" secondAttribute="bottom" constant="50" id="YJV-J6-bIQ"/>
+                            <constraint firstItem="iX3-OE-NFo" firstAttribute="trailing" secondItem="0KY-I7-EgH" secondAttribute="trailing" constant="48" id="dyi-T4-UR9"/>
                             <constraint firstItem="WGu-Jt-SyG" firstAttribute="top" secondItem="iX3-OE-NFo" secondAttribute="top" id="foY-3a-hH4"/>
-                            <constraint firstItem="r1P-pR-C1F" firstAttribute="bottom" secondItem="iX3-OE-NFo" secondAttribute="bottom" id="jdV-9A-vJq"/>
+                            <constraint firstItem="vP5-w2-f2w" firstAttribute="top" secondItem="WGu-Jt-SyG" secondAttribute="bottom" constant="10" id="gZk-5u-MdU"/>
+                            <constraint firstItem="0KY-I7-EgH" firstAttribute="leading" secondItem="iX3-OE-NFo" secondAttribute="leading" constant="48" id="nCy-vf-Ugj"/>
+                            <constraint firstItem="r1P-pR-C1F" firstAttribute="leading" secondItem="iX3-OE-NFo" secondAttribute="leading" id="vvu-8S-YJU"/>
                             <constraint firstItem="WGu-Jt-SyG" firstAttribute="trailing" secondItem="723-iE-5g6" secondAttribute="trailingMargin" id="xkr-Nb-VHN"/>
                         </constraints>
                     </view>
@@ -148,6 +160,7 @@
                     <connections>
                         <outlet property="LoadingIndicator" destination="32L-OM-SN7" id="TaH-DF-stC"/>
                         <outlet property="mapView" destination="WGu-Jt-SyG" id="bGt-NT-aUw"/>
+                        <outlet property="newFlickrCollectionPhotos" destination="r1P-pR-C1F" id="W3K-3a-vaf"/>
                         <outlet property="noPhotosAlertLabel" destination="0KY-I7-EgH" id="MlL-ua-9EC"/>
                         <outlet property="photosCollectionView" destination="vP5-w2-f2w" id="oQj-A0-k2y"/>
                     </connections>

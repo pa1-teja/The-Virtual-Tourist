@@ -22,6 +22,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     var location:LocationPinTable?
     
+    
     @IBOutlet weak var mapView: MKMapView!
     
     @IBOutlet weak var LoadingIndicator: UIActivityIndicatorView!
@@ -30,7 +31,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     @IBOutlet weak var photosCollectionView: UICollectionView!
     
+    @IBOutlet weak var newFlickrCollectionPhotos: UIButton!
+    
+    
     var photosList:[FlickrAPIResponseModel.Photo]?
+    
+    @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
+        
+    }
     
     fileprivate func setupFetchedResultController(){
         let fetchRequest: NSFetchRequest<PhotosTable> = PhotosTable.fetchRequest()
@@ -60,10 +68,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        LoadingIndicator.isHidden = false
-       
         
-        noPhotosAlertLabel.isHidden = true
         
             Utils.markLocation(locationCoordinates: travelLocationCoordinates, mapView: mapView)
         
@@ -73,25 +78,59 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         setupFetchedResultController()
         
+        let photoLongTapGesture = UILongPressGestureRecognizer(target: self, action: #selector(handlePhotoLongPressDeletion(longPress:)))
+        photoLongTapGesture.minimumPressDuration = 0.5
+        photoLongTapGesture.delaysTouchesBegan = true
+        
+        photosCollectionView.addGestureRecognizer(photoLongTapGesture)
        
-        
-        LoadingIndicator.isHidden = false
-        
         if(fetchedResultsController.fetchedObjects!.isEmpty){
+            LoadingIndicator.isHidden = false
             var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude)).url
             GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
+            
+            photosCollectionView.delegate = self
+            photosCollectionView.dataSource = self
+           setupFetchedResultController()
+            photosCollectionView.reloadData()
+            
         } else{
             LoadingIndicator.isHidden = true
+            noPhotosAlertLabel.isHidden = true
+            photosCollectionView.isHidden = false
+            
             photosCollectionView.delegate = self
             photosCollectionView.dataSource = self
             photosCollectionView.reloadData()
         }
         
-        print("databse photos count: \(fetchedResultsController.fetchedObjects?.count)")
+    }
+    
+    @objc func handlePhotoLongPressDeletion(longPress: UILongPressGestureRecognizer){
         
-        for photo in fetchedResultsController.fetchedObjects! {
-            print("in photos table  latitude : \(photo.latitude)  / logitude : \(photo.longitude)")
+        if longPress.state != .ended {
+              return
+          }
+        
+        let tapPoint = longPress.location(in: photosCollectionView)
+        let photoIndex = self.photosCollectionView.indexPathForItem(at: tapPoint)
+        
+        deleteSpecificPhoto(at: photoIndex!)
+        photosCollectionView.reloadItems(at: [photoIndex!])
+    }
+    
+    private func deleteSpecificPhoto(at indexPath: IndexPath){
+        
+        let photoToDelete = fetchedResultsController.object(at: indexPath)
+        
+        dataController.viewContext.delete(photoToDelete)
+        do{
+            try? dataController.viewContext.save()
+//            print("specific photo delete succeeded")
         }
+//        catch{
+//            print("Failed to delete specific photo due to \(error.localizedDescription)")
+//        }
     }
     
     private func insertPhotosToDB(imageData: Data){
@@ -99,63 +138,56 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         photoTable.photo = imageData
         photoTable.longitude = travelLocationCoordinates.longitude as Double
         photoTable.latitude = travelLocationCoordinates.latitude as Double
-        do{
-            try dataController.viewContext.save()
-            print("photo insertion succesful")
-        }catch{
-            print("Photo insetion into DB failed due to : \(error.localizedDescription)")
-        }
     }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
-        
-        LoadingIndicator.isHidden = true
-        
         guard let success = success else{
             print("FLICKR API GET response failed : \(error?.localizedDescription)")
             return
         }
-        photosCollectionView.delegate = self
-        photosCollectionView.dataSource = self
+       
         var response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
         photosList = response.photos.photo
-        photosCollectionView.reloadData()
+        
+        for photo in photosList! {
+            let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
+        
+                if let data = try? Data(contentsOf: url){
+                        self.insertPhotosToDB(imageData: data)
+                }
+        }
+        
+        do{
+            try dataController.viewContext.save()
+            print("photos insertion succesful")
+            setupFetchedResultController()
+            LoadingIndicator.isHidden = true
+            noPhotosAlertLabel.isHidden = true
+            photosCollectionView.isHidden = false
+            photosCollectionView.reloadData()
+        }catch{
+            print("Photo insetion into DB failed due to : \(error.localizedDescription)")
+        }
+        
     }
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if(fetchedResultsController.fetchedObjects!.isEmpty){
-            return photosList!.count
-        }else{
-            return fetchedResultsController.fetchedObjects!.count
-        }
+        return fetchedResultsController.fetchedObjects!.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
-        
-        if(fetchedResultsController.fetchedObjects!.isEmpty){
-            
-            let url = FlickrAPI.getFlickrImageURL(serverId: photosList![(indexPath as NSIndexPath).row].server, imageId: photosList![(indexPath as NSIndexPath).row].id, imageSecret: photosList![(indexPath as NSIndexPath).row].secret)
-            
-            DispatchQueue.global().async {
-                //            GenericAPIInfo.taskInteractWithAPI(isImageLoading: true, methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: UIImage.self, completionHandler: handleFetchedFlickrImage(fetchedImage:error:))
-                
-                if let data = try? Data(contentsOf: url){
-                    DispatchQueue.main.async {
-                        cell.photoViewCell.image = UIImage(data: data)
-                    }
-                    self.insertPhotosToDB(imageData: data)
+      
+            DispatchQueue.main.async {
+                if let photo = self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo{
+                    cell.photoViewCell.image = UIImage(data: photo)
                 }
             }
-        }else{
-            DispatchQueue.main.async {
-                cell.photoViewCell.image = UIImage(data: self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo!)
-            }
-        }
-        
         return cell
     }
+    
+    
 
 }
