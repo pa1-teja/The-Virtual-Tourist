@@ -109,6 +109,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     func fetchFlickrImages(pageNumber: Int){
         newFlickrCollectionPhotos.isEnabled = false
+        photosCollectionView.isHidden = true
+        noPhotosAlertLabel.isHidden = false
+        LoadingIndicator.isHidden = false
         var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude),String(pageNumber)).url
         GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
     }
