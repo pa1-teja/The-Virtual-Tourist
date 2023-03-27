@@ -37,7 +37,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     var photosList:[FlickrAPIResponseModel.Photo]?
     
     @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
-        
+        batchDeletePhotosOfSpecificLocation()
     }
     
     fileprivate func setupFetchedResultController(){
@@ -131,6 +131,29 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
 //        catch{
 //            print("Failed to delete specific photo due to \(error.localizedDescription)")
 //        }
+    }
+    
+    private func batchDeletePhotosOfSpecificLocation(){
+        DispatchQueue.global().async {
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "PhotosTable")
+            
+            
+            let predicate = NSPredicate(format: "latitude == %@", String(self.travelLocationCoordinates.latitude))
+            
+            let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
+            
+            fetchRequest.predicate = predicate
+           
+            
+            do{
+                let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                try self.dataController.viewContext.execute(deleteRequest)
+                try  self.dataController.viewContext.save()
+            }catch{
+                print("Failed to delete all the photos dure to : \(error.localizedDescription)")
+            }
+        }
+        
     }
     
     private func insertPhotosToDB(imageData: Data){
