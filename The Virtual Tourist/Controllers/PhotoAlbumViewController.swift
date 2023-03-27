@@ -38,6 +38,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
         batchDeletePhotosOfSpecificLocation()
+        fetchFlickrImages(pageNumber: Int.random(in: 2..<100))
     }
     
     fileprivate func setupFetchedResultController(){
@@ -86,8 +87,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
        
         if(fetchedResultsController.fetchedObjects!.isEmpty){
             LoadingIndicator.isHidden = false
-            var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude)).url
-            GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
+            
+            fetchFlickrImages(pageNumber: 1)
             
             photosCollectionView.delegate = self
             photosCollectionView.dataSource = self
@@ -104,6 +105,12 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             photosCollectionView.reloadData()
         }
         
+    }
+    
+    func fetchFlickrImages(pageNumber: Int){
+        newFlickrCollectionPhotos.isEnabled = false
+        var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude),String(pageNumber)).url
+        GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
     }
     
     @objc func handlePhotoLongPressDeletion(longPress: UILongPressGestureRecognizer){
@@ -168,6 +175,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             print("FLICKR API GET response failed : \(error?.localizedDescription)")
             return
         }
+        
        
         var response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
         photosList = response.photos.photo
@@ -182,6 +190,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             }
             
             DispatchQueue.main.async {
+                self.newFlickrCollectionPhotos.isEnabled = true
                 self.LoadingIndicator.isHidden = true
                 self.noPhotosAlertLabel.isHidden = true
                 self.photosCollectionView.isHidden = false
