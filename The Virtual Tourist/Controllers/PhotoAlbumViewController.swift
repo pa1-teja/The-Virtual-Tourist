@@ -148,26 +148,36 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
        
         var response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
         photosList = response.photos.photo
-        
-        for photo in photosList! {
-            let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
-        
-                if let data = try? Data(contentsOf: url){
-                        self.insertPhotosToDB(imageData: data)
+       
+        DispatchQueue.global().async {
+            for photo in self.photosList! {
+                let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
+            
+                    if let data = try? Data(contentsOf: url){
+                            self.insertPhotosToDB(imageData: data)
+                    }
+            }
+            
+            DispatchQueue.main.async {
+                self.LoadingIndicator.isHidden = true
+                self.noPhotosAlertLabel.isHidden = true
+                self.photosCollectionView.isHidden = false
+                
+                do{
+                    try self.dataController.viewContext.save()
+                    print("photos insertion succesful")
+                    self.setupFetchedResultController()
+                    
+                    self.photosCollectionView.reloadData()
+                }catch{
+                    print("Photo insetion into DB failed due to : \(error.localizedDescription)")
                 }
+            }
         }
         
-        do{
-            try dataController.viewContext.save()
-            print("photos insertion succesful")
-            setupFetchedResultController()
-            LoadingIndicator.isHidden = true
-            noPhotosAlertLabel.isHidden = true
-            photosCollectionView.isHidden = false
-            photosCollectionView.reloadData()
-        }catch{
-            print("Photo insetion into DB failed due to : \(error.localizedDescription)")
-        }
+      
+        
+    
         
     }
     
