@@ -47,11 +47,14 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         }
     }
     
+ 
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         dataController = appDelegateObj.dataController
         mapView.delegate = self
+        
         
 //                requestLocationPermission()
 //                requestLiveCurrentLocationDetailsWithAccuracy()
@@ -64,6 +67,8 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         setupFetchedResultController()
         
         fetchLocallyStoredLocationPins()
+        
+        locationPinTableObj = LocationPinTable(context: dataController.viewContext)
     }
     
     
@@ -95,7 +100,6 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     }
     
     func insertLocationPinDetails(coordinates: CLLocationCoordinate2D){
-        locationPinTableObj = LocationPinTable(context: dataController.viewContext)
         locationPinTableObj!.latitude = coordinates.latitude
         locationPinTableObj!.longitude = coordinates.longitude
              appDelegateObj.saveViewContext()
@@ -113,6 +117,31 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         
         photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
         photoAlbumViewConteoller.dataController = dataController
+        
+       
+        
+        if(locationPinTableObj == nil){
+            let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
+            
+            let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
+            
+            let predicate = NSPredicate(format: "latitude == %@ AND longitide == %@", String(locationCoordinates.latitude),String(locationCoordinates.longitude))
+            
+            fetchRequest.sortDescriptors = [sortDescriptor]
+            fetchRequest.predicate = predicate
+            
+            fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "LocationPins")
+            
+            fetchedResultsController.delegate = self
+            
+            do{
+                try fetchedResultsController.performFetch()
+                print("individual location pin fetched from table : \(fetchedResultsController.fetchedObjects!.count)")
+            }catch{
+                fatalError("Fetch action could not be performed : \(error.localizedDescription)")
+            }
+        }
+        
         photoAlbumViewConteoller.location = locationPinTableObj!
         
         navigationController?.pushViewController(photoAlbumViewConteoller, animated: true)

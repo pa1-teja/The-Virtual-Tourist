@@ -31,6 +31,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     @IBOutlet weak var newFlickrCollectionPhotos: UIButton!
     
+    @IBOutlet weak var loadingIndicator: UIActivityIndicatorView!
     
     var photosList:[FlickrAPIResponseModel.Photo]?
     
@@ -55,7 +56,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         do{
             try fetchedResultsController.performFetch()
-            print("database images count : \(fetchedResultsController.fetchedObjects?.count)")
+            print("database images count : \(String(describing: fetchedResultsController.fetchedObjects?.count))")
         }catch{
             fatalError("Fetch action could not be performed : \(error.localizedDescription)")
         }
@@ -80,7 +81,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             fetchFlickrImages(pageNumber: 1)
             
         } else{
+            photosCollectionView.isHidden = false
+            loadingIndicator.isHidden = true
             noPhotosAlertLabel.isHidden = true
+            newFlickrCollectionPhotos.isEnabled = true
             photosCollectionView.delegate = self
             photosCollectionView.dataSource = self
             photosCollectionView.reloadData()
@@ -91,7 +95,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     func fetchFlickrImages(pageNumber: Int){
         newFlickrCollectionPhotos.isEnabled = false
         noPhotosAlertLabel.isHidden = false
-        var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude),String(pageNumber)).url
+        loadingIndicator.isHidden = false
+        newFlickrCollectionPhotos.isEnabled = false
+        let url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude),String(pageNumber)).url
         GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
     }
     
@@ -129,7 +135,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             
             let predicate = NSPredicate(format: "latitude == %@", String(self.travelLocationCoordinates.latitude))
             
-            let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
+            _ = NSSortDescriptor(key: "photo", ascending: false)
             
             fetchRequest.predicate = predicate
            
@@ -153,12 +159,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
         guard let success = success else{
-            print("FLICKR API GET response failed : \(error?.localizedDescription)")
+            print("FLICKR API GET response failed : \(String(describing: error?.localizedDescription))")
             return
         }
         
-        var response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
+        let response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
         photosList = response.photos.photo
+        
+        noPhotosAlertLabel.isHidden = true
+        loadingIndicator.isHidden = true
+        newFlickrCollectionPhotos.isEnabled = true
+        
+        photosCollectionView.isHidden = false
         photosCollectionView.delegate = self
         photosCollectionView.dataSource = self
         photosCollectionView.reloadData()
@@ -177,15 +189,15 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
         
-        cell.photoViewCell.startAnimating()
+        cell.imageLoadingIndicator.isHidden = false
         
         if(fetchedResultsController.fetchedObjects!.isEmpty){
-            var photo = self.photosList![(indexPath as NSIndexPath).row]
+            let photo = self.photosList![(indexPath as NSIndexPath).row]
             let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
                 DispatchQueue.global().async {
                     if let data = try? Data(contentsOf: url){
                         DispatchQueue.main.async {
-                            cell.photoViewCell.stopAnimating()
+                            cell.imageLoadingIndicator.isHidden = true
                             cell.photoViewCell.image = UIImage(data: data)
                         }
                         self.insertPhotosToDB(imageData: data)
@@ -194,10 +206,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
            
             
         }else{
-//            cell.photoViewCell.stopAnimating()
-            
+            cell.imageLoadingIndicator.isHidden = false
             DispatchQueue.main.async {
                 if let photo = self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo{
+                    cell.imageLoadingIndicator.isHidden = true
                     cell.photoViewCell.image = UIImage(data: photo)
                 }
             }
