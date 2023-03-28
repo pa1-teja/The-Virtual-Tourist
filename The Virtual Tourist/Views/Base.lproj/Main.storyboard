@@ -102,10 +102,6 @@
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
-                                <activityIndicatorView key="backgroundView" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="medium" id="32L-OM-SN7" userLabel="loading indicatior">
-                                    <rect key="frame" x="0.0" y="0.0" width="361" height="428"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                </activityIndicatorView>
                                 <cells>
                                     <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="Flickr Photo" id="iXG-N6-jEf" userLabel="Photo View Cell" customClass="TravelPhotosCollectionViewCell" customModule="The_Virtual_Tourist" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
@@ -114,8 +110,8 @@
                                             <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="photo.artframe" catalog="system" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ODI-H1-CiZ">
-                                                    <rect key="frame" x="0.0" y="1.6666666666666643" width="100" height="97"/>
+                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" adjustsImageSizeForAccessibilityContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ODI-H1-CiZ">
+                                                    <rect key="frame" x="0.0" y="0.0" width="100" height="100"/>
                                                     <constraints>
                                                         <constraint firstAttribute="width" constant="100" id="Q24-Rf-1RN"/>
                                                         <constraint firstAttribute="height" constant="100" id="Xt3-f8-41Z"/>
@@ -158,7 +154,6 @@
                     </view>
                     <navigationItem key="navigationItem" leftItemsSupplementBackButton="YES" id="srF-Wd-1uK"/>
                     <connections>
-                        <outlet property="LoadingIndicator" destination="32L-OM-SN7" id="TaH-DF-stC"/>
                         <outlet property="mapView" destination="WGu-Jt-SyG" id="bGt-NT-aUw"/>
                         <outlet property="newFlickrCollectionPhotos" destination="r1P-pR-C1F" id="W3K-3a-vaf"/>
                         <outlet property="noPhotosAlertLabel" destination="0KY-I7-EgH" id="MlL-ua-9EC"/>
@@ -171,7 +166,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="photo.artframe" catalog="system" width="128" height="93"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

@@ -11,7 +11,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
-    var location = [TravelLocationModel.travelLocation]()
+//    var location = [TravelLocationModel.travelLocation]()
     var window: UIWindow?
     
     let dataController = DataController(modelName: "The Virtual Tourist")

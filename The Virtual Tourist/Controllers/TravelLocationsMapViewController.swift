@@ -27,10 +27,12 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     var fetchedResultsController: NSFetchedResultsController<LocationPinTable>!
     
+    var locationPinTableObj: LocationPinTable?
+    
     fileprivate func setupFetchedResultController(){
         let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
         
-        let sortDescriptor = NSSortDescriptor(key: "id", ascending: false)
+        let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
         
         fetchRequest.sortDescriptors = [sortDescriptor]
         
@@ -51,8 +53,8 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         dataController = appDelegateObj.dataController
         mapView.delegate = self
         
-                requestLocationPermission()
-                requestLiveCurrentLocationDetailsWithAccuracy()
+//                requestLocationPermission()
+//                requestLiveCurrentLocationDetailsWithAccuracy()
         
         longTapGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressPinLocation))
         longTapGesture.minimumPressDuration = 1
@@ -93,18 +95,15 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     }
     
     func insertLocationPinDetails(coordinates: CLLocationCoordinate2D){
-        let locationPinTable = LocationPinTable(context: dataController.viewContext)
-        locationPinTable.latitude = coordinates.latitude
-        locationPinTable.longitude = coordinates.longitude
+        locationPinTableObj = LocationPinTable(context: dataController.viewContext)
+        locationPinTableObj!.latitude = coordinates.latitude
+        locationPinTableObj!.longitude = coordinates.longitude
              appDelegateObj.saveViewContext()
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if view.annotation?.coordinate != nil{
-            appDelegateObj.location.append(TravelLocationModel.travelLocation.init(locationCoordinates: view.annotation!.coordinate))
-            
             moveToPhotoAlbum(locationCoordinates: view.annotation!.coordinate)
-        
         }
     }
     
@@ -114,6 +113,7 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         
         photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
         photoAlbumViewConteoller.dataController = dataController
+        photoAlbumViewConteoller.location = locationPinTableObj!
         
         navigationController?.pushViewController(photoAlbumViewConteoller, animated: true)
     }

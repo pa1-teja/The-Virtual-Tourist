@@ -20,12 +20,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     var fetchedResultsController: NSFetchedResultsController<PhotosTable>!
     
-    var location:LocationPinTable?
+    var location:LocationPinTable!
     
     
     @IBOutlet weak var mapView: MKMapView!
-    
-    @IBOutlet weak var LoadingIndicator: UIActivityIndicatorView!
     
     @IBOutlet weak var noPhotosAlertLabel: UILabel!
     
@@ -38,17 +36,13 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
         batchDeletePhotosOfSpecificLocation()
-        fetchFlickrImages(pageNumber: Int.random(in: 2..<100))
+        fetchFlickrImages(pageNumber: Int.random(in: 2..<10))
     }
     
     fileprivate func setupFetchedResultController(){
         let fetchRequest: NSFetchRequest<PhotosTable> = PhotosTable.fetchRequest()
         
-        let location = LocationPinTable(context: dataController.viewContext)
-        location.latitude = travelLocationCoordinates.latitude
-        location.longitude = travelLocationCoordinates.longitude
-        
-        let predicate = NSPredicate(format: "latitude == %@", String(travelLocationCoordinates.latitude))
+        let predicate = NSPredicate(format: "location == %@", location)
         
         let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
         
@@ -61,6 +55,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         do{
             try fetchedResultsController.performFetch()
+            print("database images count : \(fetchedResultsController.fetchedObjects?.count)")
         }catch{
             fatalError("Fetch action could not be performed : \(error.localizedDescription)")
         }
@@ -72,11 +67,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         
             Utils.markLocation(locationCoordinates: travelLocationCoordinates, mapView: mapView)
-        
-        location = LocationPinTable(context: dataController.viewContext)
-        location?.longitude = travelLocationCoordinates.longitude
-        location?.latitude = travelLocationCoordinates.latitude
-        
         setupFetchedResultController()
         
         let photoLongTapGesture = UILongPressGestureRecognizer(target: self, action: #selector(handlePhotoLongPressDeletion(longPress:)))
@@ -86,20 +76,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         photosCollectionView.addGestureRecognizer(photoLongTapGesture)
        
         if(fetchedResultsController.fetchedObjects!.isEmpty){
-            LoadingIndicator.isHidden = false
             
             fetchFlickrImages(pageNumber: 1)
             
-            photosCollectionView.delegate = self
-            photosCollectionView.dataSource = self
-           setupFetchedResultController()
-            photosCollectionView.reloadData()
-            
         } else{
-            LoadingIndicator.isHidden = true
             noPhotosAlertLabel.isHidden = true
-            photosCollectionView.isHidden = false
-            
             photosCollectionView.delegate = self
             photosCollectionView.dataSource = self
             photosCollectionView.reloadData()
@@ -109,9 +90,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     func fetchFlickrImages(pageNumber: Int){
         newFlickrCollectionPhotos.isEnabled = false
-        photosCollectionView.isHidden = true
         noPhotosAlertLabel.isHidden = false
-        LoadingIndicator.isHidden = false
         var url = FlickrAPI.FlickrEndpoint.coordinates(String(travelLocationCoordinates.latitude), String(travelLocationCoordinates.longitude),String(pageNumber)).url
         GenericAPIInfo.taskInteractWithAPI(isImageLoading: false,methodType: GenericAPIInfo.MethodType.GET, url: url, responseType: FlickrAPIResponseModel.FlickrAPIResponse.self, completionHandler: handleFlickrAPIPhotosResponse(success:error:))
     }
@@ -169,8 +148,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     private func insertPhotosToDB(imageData: Data){
         let photoTable = PhotosTable(context: dataController.viewContext)
         photoTable.photo = imageData
-        photoTable.longitude = travelLocationCoordinates.longitude as Double
-        photoTable.latitude = travelLocationCoordinates.latitude as Double
+        photoTable.location = location
     }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
@@ -179,57 +157,51 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             return
         }
         
-       
         var response = FlickrAPIResponseModel.FlickrAPIResponse.init(photos: success.photos, stat: success.stat)
         photosList = response.photos.photo
-       
-        DispatchQueue.global().async {
-            for photo in self.photosList! {
-                let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
-            
-                    if let data = try? Data(contentsOf: url){
-                            self.insertPhotosToDB(imageData: data)
-                    }
-            }
-            
-            DispatchQueue.main.async {
-                self.newFlickrCollectionPhotos.isEnabled = true
-                self.LoadingIndicator.isHidden = true
-                self.noPhotosAlertLabel.isHidden = true
-                self.photosCollectionView.isHidden = false
-                
-                do{
-                    try self.dataController.viewContext.save()
-                    print("photos insertion succesful")
-                    self.setupFetchedResultController()
-                    
-                    self.photosCollectionView.reloadData()
-                }catch{
-                    print("Photo insetion into DB failed due to : \(error.localizedDescription)")
-                }
-            }
+        photosCollectionView.delegate = self
+        photosCollectionView.dataSource = self
+        photosCollectionView.reloadData()
         }
-        
-      
-        
-    
-        
-    }
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return fetchedResultsController.fetchedObjects!.count
+        if( fetchedResultsController.fetchedObjects!.count > 0){
+            return fetchedResultsController.fetchedObjects!.count
+        }else{
+            return photosList!.count
+       }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
-      
+        
+        cell.photoViewCell.startAnimating()
+        
+        if(fetchedResultsController.fetchedObjects!.isEmpty){
+            var photo = self.photosList![(indexPath as NSIndexPath).row]
+            let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
+                DispatchQueue.global().async {
+                    if let data = try? Data(contentsOf: url){
+                        DispatchQueue.main.async {
+                            cell.photoViewCell.stopAnimating()
+                            cell.photoViewCell.image = UIImage(data: data)
+                        }
+                        self.insertPhotosToDB(imageData: data)
+                    }
+                }
+           
+            
+        }else{
+//            cell.photoViewCell.stopAnimating()
+            
             DispatchQueue.main.async {
                 if let photo = self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo{
                     cell.photoViewCell.image = UIImage(data: photo)
                 }
             }
+        }
         return cell
     }
     
