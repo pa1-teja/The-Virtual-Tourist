@@ -111,11 +111,12 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         let photoIndex = self.photosCollectionView.indexPathForItem(at: tapPoint)
         
         deleteSpecificPhoto(at: photoIndex!)
+        setupFetchedResultController()
         photosCollectionView.reloadItems(at: [photoIndex!])
     }
     
     private func deleteSpecificPhoto(at indexPath: IndexPath){
-        
+        setupFetchedResultController()
         let photoToDelete = fetchedResultsController.object(at: indexPath)
         
         dataController.viewContext.delete(photoToDelete)
@@ -133,7 +134,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "PhotosTable")
             
             
-            let predicate = NSPredicate(format: "latitude == %@", String(self.travelLocationCoordinates.latitude))
+            let predicate = NSPredicate(format: "location == %@", self.location)
             
             _ = NSSortDescriptor(key: "photo", ascending: false)
             

@@ -29,6 +29,8 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     var locationPinTableObj: LocationPinTable?
     
+    var loationPins: [LocationPinTable] = []
+    
     fileprivate func setupFetchedResultController(){
         let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
         
@@ -84,6 +86,7 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
             for pin in pins {
                 print("location pin coordinates : \(pin.longitude) / \(pin.latitude)")
                 let coord = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+                loationPins.append(pin)
                 Utils.markLocation(locationCoordinates: coord, mapView: mapView)
             }
         }
@@ -118,27 +121,9 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
         photoAlbumViewConteoller.dataController = dataController
         
-       
-        
-        if(locationPinTableObj == nil){
-            let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
-            
-            let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
-            
-            let predicate = NSPredicate(format: "latitude == %@ AND longitide == %@", String(locationCoordinates.latitude),String(locationCoordinates.longitude))
-            
-            fetchRequest.sortDescriptors = [sortDescriptor]
-            fetchRequest.predicate = predicate
-            
-            fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "LocationPins")
-            
-            fetchedResultsController.delegate = self
-            
-            do{
-                try fetchedResultsController.performFetch()
-                print("individual location pin fetched from table : \(fetchedResultsController.fetchedObjects!.count)")
-            }catch{
-                fatalError("Fetch action could not be performed : \(error.localizedDescription)")
+        for chosenPin in loationPins {
+            if(locationCoordinates.longitude.isEqual(to: chosenPin.longitude) && locationCoordinates.latitude.isEqual(to: chosenPin.latitude)){
+                locationPinTableObj = chosenPin
             }
         }
         
