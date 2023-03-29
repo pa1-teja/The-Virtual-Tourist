@@ -144,31 +144,28 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     private func batchDeletePhotosOfSpecificLocation(){
         DispatchQueue.global().async {
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "PhotosTable")
-            
-            
-            let predicate = NSPredicate(format: "location == %@", self.location)
-            
-            let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
-            
-            fetchRequest.predicate = predicate
-            fetchRequest.sortDescriptors = [sortDescriptor]
-            
             do{
-                let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-                try self.dataController.viewContext.execute(deleteRequest)
+                for photo in self.offlinePhotos {
+                    self.dataController.viewContext.delete(photo)
+                }
                 try  self.dataController.viewContext.save()
+                
+                DispatchQueue.main.async {
+                    self.fetchFlickrImages(pageNumber: 1)
+                }
+                
             }catch{
                 print("Failed to delete all the photos dure to : \(error.localizedDescription)")
             }
         }
-        
+       
     }
     
     private func insertPhotosToDB(imageData: Data){
         let photoTable = PhotosTable(context: dataController.viewContext)
         photoTable.photo = imageData
         photoTable.location = location
+        offlinePhotos.append(photoTable)
     }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
