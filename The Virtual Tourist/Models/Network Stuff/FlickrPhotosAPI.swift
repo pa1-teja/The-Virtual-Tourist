@@ -28,7 +28,7 @@ class FlickrAPI{
         var queryParams: [URLQueryItem]{
             switch self{
                 
-            case .coordinates(let latitude, let longitude, let pageNumber): return [URLQueryItem(name: "method", value: FlickrAPI.FlickrEndpoint.methodName), URLQueryItem(name: "api_key", value: FlickrAPI.FlickrEndpoint.apiKey), URLQueryItem(name: "format", value: "json"), URLQueryItem(name: "lat", value: latitude), URLQueryItem(name: "lon", value: longitude), URLQueryItem(name: "nojsoncallback", value: "1"), URLQueryItem(name: "page", value: pageNumber)]
+            case .coordinates(let latitude, let longitude, let pageNumber): return [URLQueryItem(name: "method", value: FlickrAPI.FlickrEndpoint.methodName), URLQueryItem(name: "api_key", value: FlickrAPI.FlickrEndpoint.apiKey), URLQueryItem(name: "format", value: "json"), URLQueryItem(name: "lat", value: latitude), URLQueryItem(name: "lon", value: longitude), URLQueryItem(name: "nojsoncallback", value: "1"), URLQueryItem(name: "per_page", value: "20"),URLQueryItem(name: "page", value: pageNumber)]
             }
         }
             

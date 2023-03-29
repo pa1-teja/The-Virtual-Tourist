@@ -35,6 +35,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     var photosList:[FlickrAPIResponseModel.Photo]?
     
+    var offlinePhotos: [PhotosTable] = []
+    
     @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
         batchDeletePhotosOfSpecificLocation()
         fetchFlickrImages(pageNumber: Int.random(in: 2..<10))
@@ -50,13 +52,25 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         fetchRequest.sortDescriptors = [sortDescriptor]
         fetchRequest.predicate = predicate
         
-        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "PhotosCache")
         
-        fetchedResultsController.delegate = self
+        
+//        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "PhotosCache")
+        
+//        fetchedResultsController.delegate = self
         
         do{
-            try fetchedResultsController.performFetch()
-            print("database images count : \(String(describing: fetchedResultsController.fetchedObjects?.count))")
+            
+            offlinePhotos = try dataController.viewContext.fetch(fetchRequest)
+//            try fetchedResultsController.performFetch()
+        
+            print("location coord passed in : \(location.longitude) / \(location.latitude)")
+            
+            for photo in offlinePhotos{
+                print("location coord from photo DB : \(photo.location?.latitude) / \(photo.location?.longitude)")
+            }
+            
+            
+            print("database images count : \(String(describing: offlinePhotos.count))")
         }catch{
             fatalError("Fetch action could not be performed : \(error.localizedDescription)")
         }
@@ -76,7 +90,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         photosCollectionView.addGestureRecognizer(photoLongTapGesture)
        
-        if(fetchedResultsController.fetchedObjects!.isEmpty){
+        if(offlinePhotos.isEmpty){
             
             fetchFlickrImages(pageNumber: 1)
             
@@ -116,17 +130,16 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     }
     
     private func deleteSpecificPhoto(at indexPath: IndexPath){
-        setupFetchedResultController()
-        let photoToDelete = fetchedResultsController.object(at: indexPath)
+        let rowVal = (indexPath as NSIndexPath).row
+        let photoToDelete = offlinePhotos[(indexPath as NSIndexPath).row]
         
-        dataController.viewContext.delete(photoToDelete)
         do{
-            try? dataController.viewContext.save()
-//            print("specific photo delete succeeded")
+            dataController.viewContext.delete(photoToDelete)
+            try dataController.viewContext.save()
+            print("specific photo delete succeeded")
+        }catch{
+            print("Failed to delete specific photo due to \(error.localizedDescription)")
         }
-//        catch{
-//            print("Failed to delete specific photo due to \(error.localizedDescription)")
-//        }
     }
     
     private func batchDeletePhotosOfSpecificLocation(){
@@ -136,10 +149,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             
             let predicate = NSPredicate(format: "location == %@", self.location)
             
-            _ = NSSortDescriptor(key: "photo", ascending: false)
+            let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
             
             fetchRequest.predicate = predicate
-           
+            fetchRequest.sortDescriptors = [sortDescriptor]
             
             do{
                 let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
@@ -179,8 +192,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if( fetchedResultsController.fetchedObjects!.count > 0){
-            return fetchedResultsController.fetchedObjects!.count
+        if( offlinePhotos.count > 0){
+            return offlinePhotos.count
         }else{
             return photosList!.count
        }
@@ -192,7 +205,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         cell.imageLoadingIndicator.isHidden = false
         
-        if(fetchedResultsController.fetchedObjects!.isEmpty){
+        if(offlinePhotos.isEmpty){
             let photo = self.photosList![(indexPath as NSIndexPath).row]
             let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
                 DispatchQueue.global().async {
@@ -209,7 +222,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }else{
             cell.imageLoadingIndicator.isHidden = false
             DispatchQueue.main.async {
-                if let photo = self.fetchedResultsController.fetchedObjects![(indexPath as NSIndexPath).row].photo{
+                if let photo = self.offlinePhotos[(indexPath as NSIndexPath).row].photo{
                     cell.imageLoadingIndicator.isHidden = true
                     cell.photoViewCell.image = UIImage(data: photo)
                 }

@@ -27,9 +27,7 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     var fetchedResultsController: NSFetchedResultsController<LocationPinTable>!
     
-    var locationPinTableObj: LocationPinTable?
-    
-    var loationPins: [LocationPinTable] = []
+    var locationPinTable: LocationPinTable?
     
     fileprivate func setupFetchedResultController(){
         let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
@@ -49,14 +47,35 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         }
     }
     
- 
+    fileprivate func fetchedLocallyStoredPin(coord: CLLocationCoordinate2D)-> LocationPinTable{
+        let fetchRequest: NSFetchRequest<LocationPinTable> = LocationPinTable.fetchRequest()
+        
+        let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: false)
+        let lat  =  String(format: "%.4f", coord.latitude)
+        let lng  = String(format: "%.4f", coord.longitude)
+        let predicate = NSPredicate(format: "longitude == %@", lng)
+        
+        fetchRequest.sortDescriptors = [sortDescriptor]
+        fetchRequest.predicate = predicate
+        do{
+            let arrResults = try dataController.viewContext.fetch(fetchRequest)
+             var pin:[LocationPinTable] = []
+            print("passed in coordinates : \(coord.longitude) / \(coord.latitude)")
+            for location in arrResults {
+                print("DB coords : \(location.latitude) / \(location.longitude)")
+                pin.append(location)
+            }
+            return pin.first!
+        }catch{
+            fatalError("Fetch specific location pin action could not be performed : \(error.localizedDescription)")
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         dataController = appDelegateObj.dataController
         mapView.delegate = self
-        
         
 //                requestLocationPermission()
 //                requestLiveCurrentLocationDetailsWithAccuracy()
@@ -69,8 +88,6 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         setupFetchedResultController()
         
         fetchLocallyStoredLocationPins()
-        
-        locationPinTableObj = LocationPinTable(context: dataController.viewContext)
     }
     
     
@@ -85,8 +102,9 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         if let pins = dbLocationsObjects {
             for pin in pins {
                 print("location pin coordinates : \(pin.longitude) / \(pin.latitude)")
-                let coord = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
-                loationPins.append(pin)
+                let lat = Double(pin.latitude!)
+                let lng = Double(pin.longitude!)
+                let coord = CLLocationCoordinate2D(latitude: lat!, longitude: lng!)
                 Utils.markLocation(locationCoordinates: coord, mapView: mapView)
             }
         }
@@ -103,14 +121,18 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     }
     
     func insertLocationPinDetails(coordinates: CLLocationCoordinate2D){
-        locationPinTableObj!.latitude = coordinates.latitude
-        locationPinTableObj!.longitude = coordinates.longitude
+        locationPinTable = LocationPinTable(context: dataController.viewContext)
+        let lat = String(format: "%.4f", coordinates.latitude)
+        let lng = String(format: "%.4f", coordinates.longitude)
+        locationPinTable!.latitude = lat
+        locationPinTable!.longitude = lng
              appDelegateObj.saveViewContext()
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if view.annotation?.coordinate != nil{
             moveToPhotoAlbum(locationCoordinates: view.annotation!.coordinate)
+        
         }
     }
     
@@ -121,13 +143,9 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
         photoAlbumViewConteoller.travelLocationCoordinates = locationCoordinates
         photoAlbumViewConteoller.dataController = dataController
         
-        for chosenPin in loationPins {
-            if(locationCoordinates.longitude.isEqual(to: chosenPin.longitude) && locationCoordinates.latitude.isEqual(to: chosenPin.latitude)){
-                locationPinTableObj = chosenPin
-            }
-        }
-        
-        photoAlbumViewConteoller.location = locationPinTableObj!
+        locationPinTable = fetchedLocallyStoredPin(coord: locationCoordinates)
+        print("photos passing coordinates : \(locationPinTable?.latitude) / \(locationPinTable?.longitude)")
+        photoAlbumViewConteoller.location = locationPinTable
         
         navigationController?.pushViewController(photoAlbumViewConteoller, animated: true)
     }
