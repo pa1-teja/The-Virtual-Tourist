@@ -22,7 +22,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     var location:LocationPinTable!
     
-    
     @IBOutlet weak var mapView: MKMapView!
     
     @IBOutlet weak var noPhotosAlertLabel: UILabel!
@@ -36,6 +35,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     var photosList:[FlickrAPIResponseModel.Photo]?
     
     var offlinePhotos: [PhotosTable] = []
+    
+    var isOfflinePhotosAvailable: Bool = false
     
     @IBAction func discardAndGetFreshPhotos(_ sender: Any) {
         batchDeletePhotosOfSpecificLocation()
@@ -52,24 +53,15 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         fetchRequest.sortDescriptors = [sortDescriptor]
         fetchRequest.predicate = predicate
         
-        
-        
 //        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "PhotosCache")
         
 //        fetchedResultsController.delegate = self
         
         do{
-            
             offlinePhotos = try dataController.viewContext.fetch(fetchRequest)
 //            try fetchedResultsController.performFetch()
+                isOfflinePhotosAvailable = offlinePhotos.isEmpty
         
-            print("location coord passed in : \(location.longitude) / \(location.latitude)")
-            
-            for photo in offlinePhotos{
-                print("location coord from photo DB : \(photo.location?.latitude) / \(photo.location?.longitude)")
-            }
-            
-            
             print("database images count : \(String(describing: offlinePhotos.count))")
         }catch{
             fatalError("Fetch action could not be performed : \(error.localizedDescription)")
@@ -78,9 +70,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        
-        
+    
             Utils.markLocation(locationCoordinates: travelLocationCoordinates, mapView: mapView)
         setupFetchedResultController()
         
@@ -89,11 +79,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         photoLongTapGesture.delaysTouchesBegan = true
         
         photosCollectionView.addGestureRecognizer(photoLongTapGesture)
-       
-        if(offlinePhotos.isEmpty){
-            
+        
+        if(isOfflinePhotosAvailable){
             fetchFlickrImages(pageNumber: 1)
-            
         } else{
             photosCollectionView.isHidden = false
             loadingIndicator.isHidden = true
@@ -124,13 +112,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         let tapPoint = longPress.location(in: photosCollectionView)
         let photoIndex = self.photosCollectionView.indexPathForItem(at: tapPoint)
         
-        deleteSpecificPhoto(at: photoIndex!)
-        setupFetchedResultController()
+        if(!isOfflinePhotosAvailable){
+            deleteSpecificPhoto(at: photoIndex!)
+        }
+//        setupFetchedResultController()
         photosCollectionView.reloadItems(at: [photoIndex!])
     }
     
     private func deleteSpecificPhoto(at indexPath: IndexPath){
-        let rowVal = (indexPath as NSIndexPath).row
         let photoToDelete = offlinePhotos[(indexPath as NSIndexPath).row]
         
         do{
@@ -145,13 +134,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     private func batchDeletePhotosOfSpecificLocation(){
         DispatchQueue.global().async {
             do{
-                for photo in self.offlinePhotos {
-                    self.dataController.viewContext.delete(photo)
+                if(!self.isOfflinePhotosAvailable){
+                    for photo in self.offlinePhotos {
+                        self.dataController.viewContext.delete(photo)
+                    }
+                    try  self.dataController.viewContext.save()
                 }
-                try  self.dataController.viewContext.save()
-                
                 DispatchQueue.main.async {
-                    self.fetchFlickrImages(pageNumber: 1)
+                    self.fetchFlickrImages(pageNumber: Int.random(in: 3..<10))
                 }
                 
             }catch{
@@ -165,7 +155,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         let photoTable = PhotosTable(context: dataController.viewContext)
         photoTable.photo = imageData
         photoTable.location = location
-        offlinePhotos.append(photoTable)
     }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
@@ -189,7 +178,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if( offlinePhotos.count > 0){
+        if(!isOfflinePhotosAvailable){
             return offlinePhotos.count
         }else{
             return photosList!.count
@@ -202,7 +191,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         cell.imageLoadingIndicator.isHidden = false
         
-        if(offlinePhotos.isEmpty){
+        if(isOfflinePhotosAvailable){
             let photo = self.photosList![(indexPath as NSIndexPath).row]
             let url = FlickrAPI.getFlickrImageURL(serverId: photo.server, imageId: photo.id, imageSecret: photo.secret)
                 DispatchQueue.global().async {
@@ -219,12 +208,12 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }else{
             cell.imageLoadingIndicator.isHidden = false
             DispatchQueue.main.async {
-                if let photo = self.offlinePhotos[(indexPath as NSIndexPath).row].photo{
-                    cell.imageLoadingIndicator.isHidden = true
-                    cell.photoViewCell.image = UIImage(data: photo)
+                    if let photo = self.offlinePhotos[(indexPath as NSIndexPath).row].photo{
+                        cell.imageLoadingIndicator.isHidden = true
+                        cell.photoViewCell.image = UIImage(data: photo)
+                    }
                 }
             }
-        }
         return cell
     }
     
