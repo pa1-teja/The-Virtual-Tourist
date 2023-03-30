@@ -53,8 +53,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         fetchRequest.sortDescriptors = [sortDescriptor]
         fetchRequest.predicate = predicate
         
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        
         do{
-            offlinePhotos = try dataController.viewContext.fetch(fetchRequest)
+            try fetchedResultsController.performFetch()
+            offlinePhotos = fetchedResultsController.fetchedObjects!
             isOfflinePhotosAvailable = offlinePhotos.isEmpty
             
             print("database images count : \(String(describing: offlinePhotos.count))")
@@ -115,10 +118,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     }
     
     private func deleteSpecificPhoto(at indexPath: IndexPath){
-        let photoToDelete = offlinePhotos[(indexPath as NSIndexPath).row]
-        
         do{
-            dataController.viewContext.delete(photoToDelete)
+            dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
             try dataController.viewContext.save()
             print("specific photo delete succeeded")
         }catch{
@@ -129,27 +130,27 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     private func batchDeletePhotosOfSpecificLocation(){
         DispatchQueue.global().async {
             do{
-                if(!self.isOfflinePhotosAvailable){
-                    for photo in self.offlinePhotos {
-                        self.dataController.viewContext.delete(photo)
-                    }
-                    try  self.dataController.viewContext.save()
-                }
+                guard let allDeletedPhoto = self.fetchedResultsController.fetchedObjects else {
+                               return
+                           }
+                for index in allDeletedPhoto {
+                              self.dataController.viewContext.delete(index)
+                          }
+                try? self.dataController.viewContext.save()
                 DispatchQueue.main.async {
                     self.fetchFlickrImages(pageNumber: Int.random(in: 3..<10))
                 }
-                
-            }catch{
-                print("Failed to delete all the photos dure to : \(error.localizedDescription)")
             }
         }
         
     }
     
     private func insertPhotosToDB(imageData: Data){
-        let photoTable = PhotosTable(context: dataController.viewContext)
-        photoTable.photo = imageData
-        photoTable.location = location
+        if(imageData != nil){
+            let photoTable = PhotosTable(context: dataController.viewContext)
+            photoTable.photo = imageData
+            photoTable.location = location
+        }
     }
     
     func handleFlickrAPIPhotosResponse(success: FlickrAPIResponseModel.FlickrAPIResponse?, error: Error?){
@@ -188,6 +189,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
                 return offlinePhotos.count
         }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
+        try! dataController.viewContext.save()
+    }
         
         func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
             
