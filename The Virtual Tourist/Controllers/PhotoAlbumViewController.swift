@@ -113,7 +113,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         if(!isOfflinePhotosAvailable){
             deleteSpecificPhoto(at: photoIndex!)
         }
-                setupFetchedResultController()
+        setupFetchedResultController()
         photosCollectionView.reloadItems(at: [photoIndex!])
     }
     
@@ -131,11 +131,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         DispatchQueue.global().async {
             do{
                 guard let allDeletedPhoto = self.fetchedResultsController.fetchedObjects else {
-                               return
-                           }
+                    return
+                }
                 for index in allDeletedPhoto {
-                              self.dataController.viewContext.delete(index)
-                          }
+                    self.dataController.viewContext.delete(index)
+                }
                 try? self.dataController.viewContext.save()
                 DispatchQueue.main.async {
                     self.fetchFlickrImages(pageNumber: Int.random(in: 3..<10))
@@ -184,31 +184,31 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             }
         }
     }
-        
-        
-        func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-                return offlinePhotos.count
-        }
+    
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return offlinePhotos.count
+    }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         dataController.viewContext.delete(fetchedResultsController.object(at: indexPath))
         try! dataController.viewContext.save()
     }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-            
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
-            
-            cell.imageLoadingIndicator.isHidden = false
-            
-            
-            DispatchQueue.main.async {
-                if let photo = self.offlinePhotos[(indexPath as NSIndexPath).row].photo{
-                    cell.imageLoadingIndicator.isHidden = true
-                    cell.photoViewCell.image = UIImage(data: photo)
-                }
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Flickr Photo", for: indexPath) as! TravelPhotosCollectionViewCell
+        
+        cell.imageLoadingIndicator.isHidden = false
+        
+        
+        DispatchQueue.main.async {
+            if let photo = self.offlinePhotos[(indexPath as NSIndexPath).row].photo{
+                cell.imageLoadingIndicator.isHidden = true
+                cell.photoViewCell.image = UIImage(data: photo)
             }
-            return cell
         }
+        return cell
     }
+}
 
